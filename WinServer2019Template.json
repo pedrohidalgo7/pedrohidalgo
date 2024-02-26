@@ -38,8 +38,8 @@
           },
           "source": {
             "type": "PlatformImage",
-            "publisher": "MicrosoftWindowsDesktop",
-            "offer": "Windows-10",
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
             "sku": "20h1-evd",
             "version": "latest"
           },

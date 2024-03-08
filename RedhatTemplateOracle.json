@@ -1,0 +1,152 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "imageTemplateName": {
+        "type": "string"
+      },
+      "api-version": {
+        "type": "string"
+      },
+      "svclocation": {
+        "type": "string"
+      }
+    },
+    "variables": {},
+    "resources": [
+      {
+        "name": "[parameters('imageTemplateName')]",
+        "type": "Microsoft.VirtualMachineImages/imageTemplates",
+        "apiVersion": "[parameters('api-version')]",
+        "location": "[parameters('svclocation')]",
+        "dependsOn": [],
+        "tags": {
+          "imagebuilderTemplate": "RedHat",
+          "userIdentity": "enabled"
+        },
+        "identity": {
+          "type": "UserAssigned",
+          "userAssignedIdentities": {
+            "/subscriptions/0f11d297-c91b-4209-864e-ea984202fce6/resourcegroups/REDHAT_ORACLE/providers/Microsoft.ManagedIdentity/userAssignedIdentities/myIdentity1709649220": {}
+          }
+        },
+        "properties": {
+          "buildTimeoutInMinutes": 30,
+          "vmProfile": {
+            "vmSize": "Standard_DS1_v2",
+            "osDiskSizeGB": 132
+          },
+          "source": {
+            "type": "PlatformImage",
+            "publisher": "Redhat",
+            "offer": "RHEL",
+            "sku": "8_8",
+            "version": "latest"
+          },
+          "customize": [
+            {
+              "type": "PowerShell",
+              "name": "GetAzCopy",
+              "inline": [
+                "New-Item -Type Directory -Path 'c:\\' -Name temp",
+                "invoke-webrequest -uri 'https://aka.ms/downloadazcopy-v10-windows' -OutFile 'c:\\temp\\azcopy.zip'",
+                "Expand-Archive 'c:\\temp\\azcopy.zip' 'c:\\temp'",
+                "copy-item 'C:\\temp\\azcopy_windows_amd64_*\\azcopy.exe\\' -Destination 'c:\\temp'"
+              ]
+            }
+          ],
+          "distribute": [
+            {
+              "type": "ManagedImage",
+              "imageId": "/subscriptions/0f11d297-c91b-4209-864e-ea984202fce6/resourceGroups/REDHAT_ORACLE/providers/Microsoft.Compute/images/aibCustomImgRedhatOracle",
+              "location": "westeurope",
+              "runOutputName": "RedHat",
+              "artifactTags": {
+                "source": "azVmImageBuilder",
+                "baseosimg": "RHEL"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

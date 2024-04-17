@@ -1,0 +1,126 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "imageTemplateName": {
+      "type": "string"
+    },
+    "api-version": {
+      "type": "string"
+    },
+    "svclocation": {
+      "type": "string"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "name": "[parameters('imageTemplateName')]",
+      "type": "Microsoft.VirtualMachineImages/imageTemplates",
+      "apiVersion": "[parameters('api-version')]",
+      "location": "[parameters('svclocation')]",
+      "dependsOn": [],
+      "tags": {
+        "imagebuilderTemplate": "winserver",
+        "userIdentity": "enabled"
+      },
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "/subscriptions/0f11d297-c91b-4209-864e-ea984202fce6/resourcegroups/CAJAMAR_WINSERVER2022_TEMPLATE_ORACLE/providers/Microsoft.ManagedIdentity/userAssignedIdentities/myIdentity1713274972": {}
+        }
+      },
+      "properties": {
+        "buildTimeoutInMinutes": 30,
+        "vmProfile": {
+          "vmSize": "Standard_DS1_v2",
+          "osDiskSizeGB": 127
+        },
+        "source": {
+          "type": "PlatformImage",
+          "publisher": "MicrosoftWindowsServer",
+          "offer": "WindowsServer",
+          "sku": "2022-datacenter-azure-edition",
+          "version": "latest",
+          "exactVersion": "20348.2322.240207"
+        },
+        "customize": [
+          {
+            "type": "PowerShell",
+            "name": "GetAzCopy",
+            "inline": [
+              // Creación carpetas temp, Pedro, Software
+              "New-Item -Type Directory -Path 'c:\\' -Name temp",
+              "New-Item -Type Directory -Path 'c:\\' -Name Pedro",
+              "New-Item -Type Directory -Path 'c:\\' -Name Software",
+              // Creación carpeta C:\temp\
+              "New-Item -Type Directory -Path 'c:\\temp\\' -Name stage",
+              // Creación fichero scm dentro de C:\Windows\system32\logfiles\
+              "New-Item -Type Directory -Path 'c:\\windows\\system32\\logfiles\\' -Name scm",
+              // Añadir Usuarios Playas,Administrator,Administrador & Visitor con Descripción del usuario " Usuario CajaMar " sinPassword a priori. Solicitará password primer inicio de sesión. 
+              "New-LocalUser -Name 'Playas' -Description 'Usuario CajaMar' -NoPassword",
+              "New-LocalUser -Name 'Administrator' -Description 'Usuario Administrator' -NoPassword",
+              "New-LocalUser -Name 'Administrador' -Description 'Usuario Administrador' -NoPassword",
+              "New-LocalUser -Name 'Visitor' -Description 'Usuario Visitor' -NoPassword",
+              // Añadir Usuario Playas, Administrator & Administrador al Grupo de Administradores.
+              "Add-LocalGroupMember -Group 'Administrators' -Member 'Playas' ",
+              "Add-LocalGroupMember -Group 'Administrators' -Member 'Administrator' ",
+              "Add-LocalGroupMember -Group 'Administrators' -Member 'Administrador' ",
+              // Deshabilitar Usuarios Administrator & Administrador
+              "Disable-LocalUser -Name 'Administrator' ",
+              "Disable-LocalUser -Name 'Administrador' ",
+              // Instalación del Módulo KB WindowsUpdate
+              "Install-Module -Name PSWindowsUpdate -Force ",
+              // Obtener/Visionar Listas de Todas las Actualizaciones Disponibles
+              "Get-WUList -MicrosoftUpdate ",
+              // Instalar Actualizaciones de KB WindowsUpdate con previa autorización y reinicio del S.O. 
+              "Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -AutoReboot ",
+              // Deshabilitar Windows Defender
+              "Set-MpPreference -DisableRealtimeMonitoring $true ",
+              // Deshabilitar TelnetClient
+              "Disable-WindowsOptionalFeature -Online -FeatureName TelnetClient ",
+              // Comprobación del Estado de Powershell
+              "Get-WindowsOptionalFeature -Online -FeatureName MicrosoftWindowsPowerShellV2 ",
+              // Deshabilitado de Powershell V2.0
+              //"Disable-WindowsOptionalFeature -Online -FeatureName MicrosoftWindowsPowerShellV2Root ",
+
+              //Detener, Modificar configuración de Audio (Arranque Automático Deshabilitado) & Deshabilitar AudioSrv 
+              "Stop-Service -name audiosrv -force",
+              "Set-Service -name audiosrv -startupType disabled ",
+              "net stop audiosrv ",
+              //Habilitar AudioSrv
+              //"net start audiosrv",
+
+
+              //Detener, Modificar configuración de Spooler (Arranque Automático Deshabilitado) & Deshabilitar Spooler Servicio de Cola de Impresión
+              "Stop-Service -name Spooler -force", 
+              "Set-Service -name spooler -startupType disabled ",
+              "net stop spooler ",
+              //Habilitar Spooler
+              //"net start spooler",
+
+
+              //"invoke-webrequest -uri 'https://aka.ms/downloadazcopy-v10-windows' -OutFile 'c:\\temp\\azcopy.zip'",
+              //"Expand-Archive 'c:\\temp\\azcopy.zip' 'c:\\temp'",
+              //"copy-item 'C:\\temp\\azcopy_windows_amd64_*\\azcopy.exe\\' -Destination 'c:\\temp'"
+            ]
+          }
+        ],
+        "distribute": [
+          {
+            "type": "ManagedImage",
+            "imageId": "/subscriptions/0f11d297-c91b-4209-864e-ea984202fce6/resourceGroups/CAJAMAR_WINSERVER2022_TEMPLATE_ORACLE/providers/Microsoft.Compute/images/aibCustomImgWinServer",
+            "location": "germanywestcentral",
+            "runOutputName": "winserver",
+            "artifactTags": {
+              "source": "azVmImageBuilder",
+              "baseosimg": "WindowsServer"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+
+
